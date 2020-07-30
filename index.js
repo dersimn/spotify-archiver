@@ -30,6 +30,8 @@ const config = require('yargs')
     .argv;
 const SpotifyWebApi = require('spotify-web-api-node');
 const express = require('express');
+const {default: PQueue} = require('p-queue');
+const queue = new PQueue({concurrency: 1});
 
 log.setLevel(config.verbosity);
 log.info(pkg.name + ' ' + pkg.version + ' starting');
@@ -39,48 +41,52 @@ const scopes = ['playlist-read-private', 'playlist-read-collaborative', 'playlis
 const redirectUri = `http://localhost:${config.port}/callback`;
 
 const spotifyApi = new SpotifyWebApi({
-    redirectUri: redirectUri,
+    redirectUri,
     clientId: config.clientId,
     clientSecret: config.clientSecret
 });
 
+checkAuth().then(result => log.debug('Check auth:', result));
+
 const app = express();
 
-app.get('/login', (req, res) => {
-    log.debug(req.params, req.body);
-    res.redirect(spotifyApi.createAuthorizeURL(scopes));
+app.get('/login', (request, response) => {
+    log.debug(request.params, request.body);
+    response.redirect(spotifyApi.createAuthorizeURL(scopes));
 });
 
-app.get('/callback', (req, res) => {
-    const error = req.query.error;
-    const code = req.query.code;
-    const state = req.query.state;
+app.get('/callback', (request, response) => {
+    const error = request.query.error;
+    const code = request.query.code;
+    const state = request.query.state;
     log.debug('Callback', code, state);
 
     if (error) {
         log.error('Callback Error:', error);
-        res.send(`Callback Error: ${error}`);
+        response.send(`Callback Error: ${error}`);
         return;
     }
 
     spotifyApi.authorizationCodeGrant(code).then(
         data => {
-            const access_token = data.body['access_token'];
-            const refresh_token = data.body['refresh_token'];
-            const expires_in = data.body['expires_in'];
+            const accessToken = data.body.access_token;
+            const refreshToken = data.body.refresh_token;
+            const expiresIn = data.body.expires_in;
 
-            spotifyApi.setAccessToken(access_token);
-            spotifyApi.setRefreshToken(refresh_token);
+            spotifyApi.setAccessToken(accessToken);
+            spotifyApi.setRefreshToken(refreshToken);
 
-            log.debug('access_token:', access_token);
-            log.debug('refresh_token:', refresh_token);
+            log.debug('access_token:', accessToken);
+            log.debug('refresh_token:', refreshToken);
 
-            log.info(`Sucessfully retreived access token. Expires in ${data.body['expires_in']} s.`);
-            res.send('Success! You can now close the window.');
+            log.info(`Sucessfully retreived access token. Expires in ${expiresIn} s.`);
+            response.send('Success! You can now close the window.');
+
+            checkAuth().then(result => log.debug('Check auth:', result));
         },
         error => {
             log.error('Error getting Tokens:', error);
-            res.send(`Error getting Tokens: ${error}`);
+            response.send(`Error getting Tokens: ${error}`);
         }
     );
 });
@@ -88,3 +94,12 @@ app.get('/callback', (req, res) => {
 app.listen(config.port, () => {
     log.info(`${config.name} listening on port ${config.port}`);
 });
+
+async function checkAuth() {
+    try {
+        await spotifyApi.getMe();
+        return true;
+    } catch {
+        return false;
+    }
+}

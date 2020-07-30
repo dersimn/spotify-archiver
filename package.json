@@ -18,8 +18,15 @@
   "homepage": "https://github.com/dersimn/spotify-archiver#readme",
   "dependencies": {
     "express": "^4.17.1",
+    "p-queue": "^6.6.0",
     "spotify-web-api-node": "^4.0.0",
     "yalm": "^4.1.0",
     "yargs": "^15.4.1"
+  },
+  "devDependencies": {
+    "xo": "^0.32.1"
+  },
+  "xo": {
+    "space": 4
   }
 }
