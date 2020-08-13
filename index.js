@@ -121,7 +121,7 @@ const mainScheduler = schedule.scheduleJob('0 0 4 * * *', async () => {
             log.debug('Your playlist', tracksMine);
 
             // Get diff between locally saved state and "Playlist (save)", save to deleted playlist and get it
-            const deletedByMe = savedState.filter(x => !tracksMine.includes(x));
+            const deletedByMe = diff(savedState, tracksMine);
             if (Array.isArray(deletedByMe) && deletedByMe.length) {
                 log.debug('You deleted', deletedByMe);
                 await spotify.addTracksToPlaylist(blacklistPlaylist.id, deletedByMe);
@@ -134,9 +134,9 @@ const mainScheduler = schedule.scheduleJob('0 0 4 * * *', async () => {
             log.debug('Source Playlist', tracksOriginal);
 
             // Get new tracks, filter deleted/blacklisted tracks
-            const newTracks = tracksOriginal.filter(x => !tracksMine.includes(x));
+            const newTracks = diff(tracksOriginal, tracksMine);
             log.debug('New tracks in source playlist', newTracks);
-            const newTracksWithoutDeleted = newTracks.filter(x => !tracksBlacklist.includes(x));
+            const newTracksWithoutDeleted = diff(newTracks, tracksBlacklist);
 
             // Add new tracks to my playlist
             if (Array.isArray(newTracksWithoutDeleted) && newTracksWithoutDeleted.length) {
@@ -164,4 +164,8 @@ async function checkAuth() {
     } catch {
         return false;
     }
+}
+
+function diff(a, b) {
+    return a.filter(x => !b.includes(x));
 }
