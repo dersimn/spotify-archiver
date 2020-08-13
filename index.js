@@ -117,20 +117,17 @@ const mainScheduler = schedule.scheduleJob('0 0 4 * * *', async () => {
             const myPlaylist = filteredPlaylists.find(p => /\(save\)$/.test(p.name));
             const blacklistPlaylist = filteredPlaylists.find(p => /\(deleted\)$/.test(p.name));
 
-            const tracksMine = (await spotify.getAllPlaylistTracks(myPlaylist.id)).map(t => t.track.uri);
+            const tracksMine = await getTracks(myPlaylist.id);
             log.debug('Your playlist', tracksMine);
 
             // Get diff between locally saved state and "Playlist (save)", save to deleted playlist and get it
             const deletedByMe = diff(savedState, tracksMine);
-            if (Array.isArray(deletedByMe) && deletedByMe.length) {
-                log.debug('You deleted', deletedByMe);
-                await spotify.addTracksToPlaylist(blacklistPlaylist.id, deletedByMe);
-            }
-            const tracksBlacklist = (await spotify.getAllPlaylistTracks(blacklistPlaylist.id)).map(t => t.track.uri);
+            await addTracks(blacklistPlaylist.id, deletedByMe);
+            const tracksBlacklist = await getTracks(blacklistPlaylist.id);
             log.debug('New Blacklist', tracksBlacklist);
 
             // Gett source playlist tracks
-            const tracksOriginal = (await spotify.getAllPlaylistTracks(originalPlaylist.id)).map(t => t.track.uri);
+            const tracksOriginal = await getTracks(originalPlaylist.id);
             log.debug('Source Playlist', tracksOriginal);
 
             // Get new tracks, filter deleted/blacklisted tracks
@@ -139,13 +136,10 @@ const mainScheduler = schedule.scheduleJob('0 0 4 * * *', async () => {
             const newTracksWithoutDeleted = diff(newTracks, tracksBlacklist);
 
             // Add new tracks to my playlist
-            if (Array.isArray(newTracksWithoutDeleted) && newTracksWithoutDeleted.length) {
-                log.debug('Adding new songs', newTracksWithoutDeleted);
-                await spotify.addTracksToPlaylist(myPlaylist.id, newTracksWithoutDeleted);
-            }
+            await addTracks(myPlaylist.id, newTracksWithoutDeleted);
 
             // Save my playlist for next run
-            savedState = (await spotify.getAllPlaylistTracks(myPlaylist.id)).map(t => t.track.uri);
+            savedState = await getTracks(myPlaylist.id);
             log.debug('New saved state', savedState);
 
         } else {
@@ -168,4 +162,12 @@ async function checkAuth() {
 
 function diff(a, b) {
     return a.filter(x => !b.includes(x));
+}
+async function addTracks(id, list) {
+    if (Array.isArray(list) && list.length) {
+        return await spotify.addTracksToPlaylist(id, list);
+    }
+}
+async function getTracks(id) {
+    return (await spotify.getAllPlaylistTracks(id)).map(t => t.track.uri)
 }
