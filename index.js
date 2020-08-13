@@ -30,8 +30,6 @@ const config = require('yargs')
     .argv;
 const SpotifyWebApi = require('spotify-web-api-node');
 const express = require('express');
-const {default: PQueue} = require('p-queue');
-const queue = new PQueue({concurrency: 1});
 const schedule = require('node-schedule');
 
 log.setLevel(config.verbosity);
