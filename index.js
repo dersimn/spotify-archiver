@@ -55,7 +55,8 @@ app.get('/login', (request, response) => {
 });
 
 app.get('/callback', (request, response) => {
-    if (request.query.error) {
+    const error = request.query.error;
+    if (error) {
         log.error('Callback Error:', error);
         response.send(`Callback Error: ${error}`);
         return;
@@ -81,11 +82,11 @@ app.get('/callback', (request, response) => {
 
         setInterval(async () => {
             const data = await spotify.refreshAccessToken();
-            const access_token = data.body['access_token'];
+            const accessToken = data.body.access_token;
 
             console.log('The access token has been refreshed!');
-            console.log('access_token:', access_token);
-            spotify.setAccessToken(access_token);
+            console.log('access_token:', accessToken);
+            spotify.setAccessToken(accessToken);
         }, expiresIn / 2 * 1000);
 
         checkAuth().then(result => {
@@ -110,10 +111,10 @@ const mainScheduler = schedule.scheduleJob('0 0 4 * * *', async () => {
     try {
         if (await checkAuth()) {
             const myPlaylists = await spotify.getAllUserPlaylists();
-            const filteredPlaylists = myPlaylists.filter(p => /^Test/.test(p.name));
+            const filteredPlaylists = myPlaylists.filter(p => p.name.startsWith('Test'));
             log.debug('Using playlists', filteredPlaylists.map(p => p.name));
 
-            const originalPlaylist = filteredPlaylists.find(p => /^Test$/.test(p.name));
+            const originalPlaylist = filteredPlaylists.find(p => p.name === 'Test');
             const myPlaylist = filteredPlaylists.find(p => /\(save\)$/.test(p.name));
             const blacklistPlaylist = filteredPlaylists.find(p => /\(deleted\)$/.test(p.name));
 
@@ -141,11 +142,10 @@ const mainScheduler = schedule.scheduleJob('0 0 4 * * *', async () => {
             // Save my playlist for next run
             savedState = await getTracks(myPlaylist.id);
             log.debug('New saved state', savedState);
-
         } else {
             log.warn('Not authorized!');
         }
-    } catch(error) {
+    } catch (error) {
         log.error(error);
     }
 });
@@ -163,11 +163,13 @@ async function checkAuth() {
 function diff(a, b) {
     return a.filter(x => !b.includes(x));
 }
+
 async function addTracks(id, list) {
-    if (Array.isArray(list) && list.length) {
-        return await spotify.addTracksToPlaylist(id, list);
+    if (Array.isArray(list) && list.length > 0) {
+        return spotify.addTracksToPlaylist(id, list);
     }
 }
+
 async function getTracks(id) {
-    return (await spotify.getAllPlaylistTracks(id)).map(t => t.track.uri)
+    return (await spotify.getAllPlaylistTracks(id)).map(t => t.track.uri);
 }
