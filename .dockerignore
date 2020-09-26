@@ -1,0 +1,13 @@
+/node_modules
+/persistence.json
+/docs
+
+## Git
+/.git
+/.gitignore
+
+## macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
