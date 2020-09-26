@@ -281,29 +281,25 @@ async function playlistArchiveContents(sourceId, targetId) {
     }
 
     const tracksTarget = await getTracks(targetId);
-    log.debug('tracksTarget', tracksTarget);
 
     // Get diff between locally saved state and "Playlist (save)", save to deleted playlist and get it
-    log.debug('persist.playlists[targetId].tracks', persist.playlists[targetId].tracks);
     const deletedByMe = diff(persist.playlists[targetId].tracks, tracksTarget);
-    log.debug('deletedByMe', deletedByMe);
     persist.playlists[targetId].blacklist = mergeUnique(persist.playlists[targetId].blacklist, deletedByMe);
-    log.debug('persist.playlists[targetId].tracks.blacklist', persist.playlists[targetId].blacklist);
 
     // Gett source playlist tracks
     const tracksSource = await getTracks(sourceId);
-    log.debug('tracksSource', tracksSource);
 
     // Get new tracks, filter deleted/blacklisted tracks
     const newTracks = diff(tracksSource, tracksTarget);
-    log.debug('newTracks', newTracks);
     const newTracksWithoutDeleted = diff(newTracks, persist.playlists[targetId].blacklist);
-    log.debug('newTracksWithoutDeleted', newTracksWithoutDeleted);
 
     // Add new tracks to my playlist
     await addTracks(targetId, newTracksWithoutDeleted);
 
     // Save my playlist for next run
     persist.playlists[targetId].tracks = await getTracks(targetId);
-    log.debug('persist.playlists[targetId].tracks', persist.playlists[targetId].tracks);
+}
+
+function objectFilter(obj, predicate) {
+    return Object.fromEntries(Object.entries(obj).filter(([key, obj]) => predicate(key, obj)));
 }
