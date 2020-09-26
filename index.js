@@ -112,9 +112,8 @@ const refreshTimer = new Yatl.Timer(async () => {
     spotify.setAccessToken(accessToken);
     persist.tokens.accessToken = accessToken;
 
-    if (expiresIn !== refreshTimer.interval) {
-        const refreshInterval = expiresIn / 2 * 1000;
-
+    const refreshInterval = expiresIn / 2 * 1000;
+    if (refreshInterval !== refreshTimer.interval) {
         log.debug('Setting Refresh Interval', refreshInterval);
         refreshTimer.restart(refreshInterval);
     }
