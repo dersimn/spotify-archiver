@@ -30,6 +30,11 @@
     "xo": "^0.32.1"
   },
   "xo": {
-    "space": 4
+    "space": 4,
+    "rules": {
+      "unicorn/prevent-abbreviations": [
+        "warn"
+      ]
+    }
   }
 }
