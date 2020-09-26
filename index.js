@@ -121,7 +121,7 @@ const refreshTimer = new Yatl.Timer(async () => {
     const accessToken = data.body.access_token;
     const expiresIn = data.body.expires_in;
 
-    log.debug('Access Token has been refreshed:', accessToken);
+    log.info('Access Token has been refreshed:', accessToken);
 
     spotify.setAccessToken(accessToken);
     persist.tokens.accessToken = accessToken;
@@ -195,7 +195,7 @@ app.get('/callback', (request, response) => {
 });
 
 app.listen(config.port, () => {
-    log.info(`${config.name} listening on port ${config.port}`);
+    log.info(`${pkg.name} listening on port ${config.port}`);
 });
 
 // Scheduler
@@ -215,7 +215,7 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
                     playlistByNameInUserPlaylists(element.target.name, userPlaylists)?.id;
 
                 if (!sourceId) {
-                    log.warn('Source playlist could not be found');
+                    log.warn('Source playlist could not be found', element.source.name);
                     continue;
                 }
 
