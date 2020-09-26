@@ -211,8 +211,13 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
             const userPlaylists = await spotify.getAllUserPlaylists();
 
             for (const element of settings.archiver) {
-                let sourceId = element.source.id || userPlaylists.find(p => p.name === element.source.name)?.id;
-                let targetId = element.target.id || userPlaylists.find(p => p.name === element.target.name)?.id;
+                const sourceId =
+                    element.source.id ||
+                    playlistByNameInPersist(element.source.name)?.id ||
+                    playlistByNameInUserPlaylists(element.source.name, userPlaylists)?.id;
+                let targetId = element.target.id ||
+                    playlistByNameInPersist(element.target.name)?.id ||
+                    playlistByNameInUserPlaylists(element.target.name, userPlaylists)?.id;
 
                 if (sourceId && !targetId) {
                     try {
@@ -224,11 +229,30 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
                 }
 
                 if (sourceId && targetId) {
-                    log.debug(`archiving from ${sourceId} to ${targetId}`);
+                    const sourceName = userPlaylists.find(p => p.id === sourceId).name;
+                    const targetName = userPlaylists.find(p => p.id === targetId).name;
 
+                    if (!persist.playlists[targetId]) {
+                        persist.playlists[targetId] = {
+                            tracks: [],
+                            blacklist: []
+                        };
+                    }
+
+                    if (!persist.playlists[sourceId]) {
+                        persist.playlists[sourceId] = {
+                            tracks: [],
+                            blacklist: []
+                        };
+                    }
+
+                    persist.playlists[sourceId].name = sourceName;
+                    persist.playlists[targetId].name = targetName;
+
+                    log.debug(`archiving from ${sourceName} (${sourceId}) to ${targetName} (${targetId})`);
                     playlistArchiveContents(sourceId, targetId);
                 } else {
-                    log.warn('could not get all IDs of', element);
+                    log.warn('could not get all IDs of', element, sourceId, targetId);
                 }
             }
         } else {
@@ -260,6 +284,40 @@ function mergeUnique(a, b) {
 
 function intersection(a, b) {
     return a.filter(element => b.includes(element));
+}
+
+function playlistByNameInPersist(name) {
+    const filtered = objectFilter(persist.playlists, (id, playlist) => playlist.name === name);
+    const count = Object.keys(filtered).length;
+
+    if (count === 1) {
+        return Object.entries(filtered)[0][1];
+    }
+
+    if (count === 0) {
+        return;
+    }
+
+    if (count > 1) {
+        throw new Error('Playlist Name not unique');
+    }
+}
+
+function playlistByNameInUserPlaylists(name, userPlaylists) {
+    const filtered = userPlaylists.filter(p => p.name === name);
+    const count = filtered.length;
+
+    if (count === 1) {
+        return filtered[0];
+    }
+
+    if (count === 0) {
+        return;
+    }
+
+    if (count > 1) {
+        throw new Error('Playlist Name not unique');
+    }
 }
 
 async function addTracks(id, list) {

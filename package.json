@@ -34,6 +34,9 @@
     "rules": {
       "unicorn/prevent-abbreviations": [
         "warn"
+      ],
+      "no-await-in-loop": [
+        "warn"
       ]
     }
   }
