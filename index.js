@@ -50,8 +50,7 @@ log.debug('loaded config:', config);
 // Load persistence
 let unwatchedPersistence = {
     tokens: {},
-    playlists: {},
-    blacklists: {}
+    playlists: {}
 };
 
 try {
@@ -274,23 +273,22 @@ async function getTracks(id) {
 }
 
 async function playlistArchiveContents(sourceId, targetId) {
-    if (!persist.blacklists[targetId]) {
-        persist.blacklists[targetId] = [];
-    }
-
     if (!persist.playlists[targetId]) {
-        persist.playlists[targetId] = [];
+        persist.playlists[targetId] = {
+            tracks: [],
+            blacklist: []
+        };
     }
 
     const tracksTarget = await getTracks(targetId);
     log.debug('tracksTarget', tracksTarget);
 
     // Get diff between locally saved state and "Playlist (save)", save to deleted playlist and get it
-    log.debug('persist.playlists[targetId]', persist.playlists[targetId]);
-    const deletedByMe = diff(persist.playlists[targetId], tracksTarget);
+    log.debug('persist.playlists[targetId].tracks', persist.playlists[targetId].tracks);
+    const deletedByMe = diff(persist.playlists[targetId].tracks, tracksTarget);
     log.debug('deletedByMe', deletedByMe);
-    persist.blacklists[targetId] = mergeUnique(persist.blacklists[targetId], deletedByMe);
-    log.debug('persist.blacklists[targetId]', persist.blacklists[targetId]);
+    persist.playlists[targetId].blacklist = mergeUnique(persist.playlists[targetId].blacklist, deletedByMe);
+    log.debug('persist.playlists[targetId].tracks.blacklist', persist.playlists[targetId].blacklist);
 
     // Gett source playlist tracks
     const tracksSource = await getTracks(sourceId);
@@ -299,13 +297,13 @@ async function playlistArchiveContents(sourceId, targetId) {
     // Get new tracks, filter deleted/blacklisted tracks
     const newTracks = diff(tracksSource, tracksTarget);
     log.debug('newTracks', newTracks);
-    const newTracksWithoutDeleted = diff(newTracks, persist.blacklists[targetId]);
+    const newTracksWithoutDeleted = diff(newTracks, persist.playlists[targetId].blacklist);
     log.debug('newTracksWithoutDeleted', newTracksWithoutDeleted);
 
     // Add new tracks to my playlist
     await addTracks(targetId, newTracksWithoutDeleted);
 
     // Save my playlist for next run
-    persist.playlists[targetId] = await getTracks(targetId);
-    log.debug('persist.playlists[targetId]', persist.playlists[targetId]);
+    persist.playlists[targetId].tracks = await getTracks(targetId);
+    log.debug('persist.playlists[targetId].tracks', persist.playlists[targetId].tracks);
 }
