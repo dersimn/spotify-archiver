@@ -286,10 +286,6 @@ function mergeUnique(a, b) {
     return [...new Set([...a, ...b])];
 }
 
-function intersection(a, b) {
-    return a.filter(element => b.includes(element));
-}
-
 function playlistByNameInPersist(name) {
     const filtered = objectFilter(persist.playlists, (id, playlist) => playlist.name === name);
     const count = Object.keys(filtered).length;
