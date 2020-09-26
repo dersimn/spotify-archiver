@@ -63,17 +63,12 @@ try {
 log.debug('loaded persistence file:', unwatchedPersistence);
 
 const persist = onChange(unwatchedPersistence, () => {
-    log.debug('Persistence changed');
-
     const json = JSON.stringify(unwatchedPersistence, ...((config.verbosity === 'debug') ? [null, 2] : []));
 
     fs.writeFile(config.persistenceFile, json, error => {
         if (error) {
             log.error('Error saving Persistence', error.message);
-            return;
         }
-
-        log.debug('Persistence saved');
     });
 });
 
