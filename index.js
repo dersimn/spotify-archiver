@@ -87,6 +87,7 @@ const settings = (() => {
 })();
 log.debug('loaded settings', settings);
 
+// Prepare Spotify Api
 const scopes = ['playlist-read-private', 'playlist-read-collaborative', 'playlist-modify-public', 'playlist-modify-private'];
 const redirectUri = `http://localhost:${config.port}/callback`;
 
@@ -117,6 +118,7 @@ const refreshTimer = new Yatl.Timer(async () => {
     }
 });
 
+// Check Auth Status on Start
 checkAuth().then(result => {
     log.debug('Check auth:', result);
 
@@ -126,6 +128,7 @@ checkAuth().then(result => {
     }
 });
 
+// Provide HTTP Callback Server for Auth
 const app = express();
 
 app.get('/login', (request, response) => {
@@ -180,6 +183,7 @@ app.listen(config.port, () => {
     log.info(`${config.name} listening on port ${config.port}`);
 });
 
+// Scheduler
 persist.playlistContent.Test = [];
 const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
     try {
@@ -225,6 +229,7 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
 });
 log.debug('scheduler', mainScheduler);
 
+// Functions
 async function checkAuth() {
     try {
         await spotify.getMe();
