@@ -13,6 +13,7 @@ const config = require('yargs')
     .describe('read-only', 'Enable read-only mode for testing.')
     .describe('schedule', 'Cron-like node-schedule expression when to run this script.')
     .describe('persistence-file', 'Path to persistence.json file.')
+    .describe('settings-file', 'Path to settings.yaml file.')
     .alias({
         h: 'help',
         p: 'port',
@@ -24,7 +25,8 @@ const config = require('yargs')
         port: 8888,
         'read-only': false,
         schedule: '0 0 4 * * *',
-        'persistence-file': './persistence.json'
+        'persistence-file': './persistence.json',
+        'settings-file': './settings.yaml'
     })
     .demandOption([
         'client-id',
@@ -38,6 +40,7 @@ const express = require('express');
 const schedule = require('node-schedule');
 const onChange = require('on-change');
 const Yatl = require('yetanothertimerlibrary');
+const yaml = require('js-yaml');
 
 // Parse arguments
 log.setLevel(config.verbosity);
@@ -72,6 +75,17 @@ const persist = onChange(unwatchedPersistence, () => {
         log.debug('Persistence saved');
     });
 });
+
+// Load settings file
+const settings = (() => {
+    try {
+        const doc = yaml.safeLoad(fs.readFileSync(config.settingsFile, 'utf8'));
+        return doc;
+    } catch (error) {
+        log.error('Unable to load Settings File', error);
+    }
+})();
+log.debug('loaded settings', settings);
 
 const scopes = ['playlist-read-private', 'playlist-read-collaborative', 'playlist-modify-public', 'playlist-modify-private'];
 const redirectUri = `http://localhost:${config.port}/callback`;
