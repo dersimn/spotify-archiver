@@ -80,12 +80,32 @@ const persist = onChange(unwatchedPersistence, () => {
 
 // Load settings file
 const settings = (() => {
+    let yamlfile;
     try {
-        const doc = yaml.safeLoad(fs.readFileSync(config.settingsFile, 'utf8'));
-        return doc;
+        yamlfile = yaml.safeLoad(fs.readFileSync(config.settingsFile, 'utf8'));
     } catch (error) {
         log.error('Unable to load Settings File', error);
+        process.exit(1);
     }
+
+    const tmp = {
+        archiver: []
+    };
+
+    for (const element of yamlfile.archiver) {
+        if (typeof element === 'string') {
+            tmp.archiver.push({
+                source: {
+                    name: element
+                },
+                target: {
+                    name: element + ' (save)'
+                }
+            });
+        }
+    }
+
+    return tmp;
 })();
 log.debug('loaded settings', settings);
 

@@ -1,5 +1,3 @@
 ---
 archiver:
-  - Test:
-      saved: Test (save)
-      deleted: Test (deleted)
+  - Test
