@@ -37,6 +37,7 @@ const SpotifyWebApi = require('spotify-web-api-node');
 const express = require('express');
 const schedule = require('node-schedule');
 const onChange = require('on-change');
+const Yatl = require('yetanothertimerlibrary');
 
 // Parse arguments
 log.setLevel(config.verbosity);
@@ -50,6 +51,7 @@ try {
     unwatchedPersistence = JSON.parse(json);
 } catch {
     unwatchedPersistence = {
+        tokens: {},
         playlistContent: {}
     };
 }
@@ -77,10 +79,38 @@ const redirectUri = `http://localhost:${config.port}/callback`;
 const spotify = new SpotifyWebApi({
     redirectUri,
     clientId: config.clientId,
-    clientSecret: config.clientSecret
+    clientSecret: config.clientSecret,
+    accessToken: persist.tokens.accessToken,
+    refreshToken: persist.tokens.refreshToken
 });
 
-checkAuth().then(result => log.debug('Check auth:', result));
+const refreshTimer = new Yatl.Timer(async () => {
+    const data = await spotify.refreshAccessToken();
+
+    const accessToken = data.body.access_token;
+    const expiresIn = data.body.expires_in;
+
+    log.debug('Access Token has been refreshed:', accessToken);
+
+    spotify.setAccessToken(accessToken);
+    persist.tokens.accessToken = accessToken;
+
+    if (expiresIn !== refreshTimer.interval) {
+        const refreshInterval = expiresIn / 2 * 1000;
+
+        log.debug('Setting Refresh Interval', refreshInterval);
+        refreshTimer.restart(refreshInterval);
+    }
+});
+
+checkAuth().then(result => {
+    log.debug('Check auth:', result);
+
+    if (result) {
+        refreshTimer.exec();
+        mainScheduler.invoke();
+    }
+});
 
 const app = express();
 
@@ -106,23 +136,18 @@ app.get('/callback', (request, response) => {
         const refreshToken = data.body.refresh_token;
         const expiresIn = data.body.expires_in;
 
-        spotify.setAccessToken(accessToken);
-        spotify.setRefreshToken(refreshToken);
-
         log.debug('access_token:', accessToken);
         log.debug('refresh_token:', refreshToken);
+
+        spotify.setAccessToken(accessToken);
+        spotify.setRefreshToken(refreshToken);
+        persist.tokens.accessToken = accessToken;
+        persist.tokens.refreshToken = refreshToken;
 
         log.info(`Sucessfully retreived access token. Expires in ${expiresIn} s.`);
         response.send('Success! You can now close the window.');
 
-        setInterval(async () => {
-            const data = await spotify.refreshAccessToken();
-            const accessToken = data.body.access_token;
-
-            console.log('The access token has been refreshed!');
-            console.log('access_token:', accessToken);
-            spotify.setAccessToken(accessToken);
-        }, expiresIn / 2 * 1000);
+        refreshTimer.restart(expiresIn / 2 * 1000);
 
         checkAuth().then(result => {
             log.debug('Check auth:', result);

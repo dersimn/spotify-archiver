@@ -22,7 +22,8 @@
     "on-change": "^2.1.2",
     "spotify-web-api-node": "^4.0.0",
     "yalm": "^4.1.0",
-    "yargs": "^15.4.1"
+    "yargs": "^15.4.1",
+    "yetanothertimerlibrary": "^3.2.0"
   },
   "devDependencies": {
     "xo": "^0.32.1"
