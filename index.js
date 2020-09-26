@@ -235,29 +235,34 @@ async function playlistArchiveContents(sourceId, targetId) {
         persist.blacklists[targetId] = [];
     }
 
-    const tracksMine = await getTracks(targetId);
-    log.debug('Your playlist', tracksMine);
+    if (!persist.playlists[targetId]) {
+        persist.playlists[targetId] = [];
+    }
+
+    const tracksTarget = await getTracks(targetId);
+    log.debug('tracksTarget', tracksTarget);
 
     // Get diff between locally saved state and "Playlist (save)", save to deleted playlist and get it
-    log.debug('persist.playlistContent.Test', persist.playlistContent.Test);
-    const deletedByMe = diff(persist.playlistContent.Test, tracksMine);
+    log.debug('persist.playlists[targetId]', persist.playlists[targetId]);
+    const deletedByMe = diff(persist.playlists[targetId], tracksTarget);
     log.debug('deletedByMe', deletedByMe);
     persist.blacklists[targetId] = [...new Set([...persist.blacklists[targetId], ...deletedByMe])];
-    log.debug('blacklist', persist.blacklists[targetId]);
+    log.debug('persist.blacklists[targetId]', persist.blacklists[targetId]);
 
     // Gett source playlist tracks
-    const tracksOriginal = await getTracks(sourceId);
-    log.debug('Source Playlist', tracksOriginal);
+    const tracksSource = await getTracks(sourceId);
+    log.debug('tracksSource', tracksSource);
 
     // Get new tracks, filter deleted/blacklisted tracks
-    const newTracks = diff(tracksOriginal, tracksMine);
-    log.debug('New tracks in source playlist', newTracks);
+    const newTracks = diff(tracksSource, tracksTarget);
+    log.debug('newTracks', newTracks);
     const newTracksWithoutDeleted = diff(newTracks, persist.blacklists[targetId]);
+    log.debug('newTracksWithoutDeleted', newTracksWithoutDeleted);
 
     // Add new tracks to my playlist
     await addTracks(targetId, newTracksWithoutDeleted);
 
     // Save my playlist for next run
-    persist.playlistContent.Test = await getTracks(targetId);
-    log.debug('New saved state', persist.playlistContent.Test);
+    persist.playlists[targetId] = await getTracks(targetId);
+    log.debug('persist.playlists[targetId]', persist.playlists[targetId]);
 }
