@@ -11,6 +11,7 @@ const config = require('yargs')
     .describe('client-id', 'Data of your Spotify App. Create an application here: https://developer.spotify.com/my-applications')
     .describe('client-secret', 'Data of your Spotify App. Create an application here: https://developer.spotify.com/my-applications')
     .describe('read-only', 'Enable read-only mode for testing.')
+    .describe('schedule', 'Cron-like node-schedule expression when to run this script.')
     .describe('persistence-file', 'Path to persistence.json file.')
     .alias({
         h: 'help',
@@ -22,6 +23,7 @@ const config = require('yargs')
     .default({
         port: 8888,
         'read-only': false,
+        schedule: '0 0 4 * * *',
         'persistence-file': './persistence.json'
     })
     .demandOption([
@@ -140,7 +142,7 @@ app.listen(config.port, () => {
 });
 
 persist.playlistContent.Test = [];
-const mainScheduler = schedule.scheduleJob('0 0 4 * * *', async () => {
+const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
     try {
         if (await checkAuth()) {
             const myPlaylists = await spotify.getAllUserPlaylists();
