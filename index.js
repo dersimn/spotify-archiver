@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const fs = require('fs');
 const pkg = require('./package.json');
 const log = require('yalm');
 const config = require('yargs')
@@ -10,6 +11,7 @@ const config = require('yargs')
     .describe('client-id', 'Data of your Spotify App. Create an application here: https://developer.spotify.com/my-applications')
     .describe('client-secret', 'Data of your Spotify App. Create an application here: https://developer.spotify.com/my-applications')
     .describe('read-only', 'Enable read-only mode for testing.')
+    .describe('persistence-file', 'Path to persistence.json file.')
     .alias({
         h: 'help',
         p: 'port',
@@ -19,7 +21,8 @@ const config = require('yargs')
     })
     .default({
         port: 8888,
-        'read-only': false
+        'read-only': false,
+        'persistence-file': './persistence.json'
     })
     .demandOption([
         'client-id',
@@ -31,10 +34,40 @@ const config = require('yargs')
 const SpotifyWebApi = require('spotify-web-api-node');
 const express = require('express');
 const schedule = require('node-schedule');
+const onChange = require('on-change');
 
+// Parse arguments
 log.setLevel(config.verbosity);
 log.info(pkg.name + ' ' + pkg.version + ' starting');
-log.debug('loaded config: ', config);
+log.debug('loaded config:', config);
+
+// Load persistence
+let unwatchedPersistence;
+try {
+    const json = fs.readFileSync(config.persistenceFile);
+    unwatchedPersistence = JSON.parse(json);
+} catch {
+    unwatchedPersistence = {
+        playlistContent: {}
+    };
+}
+
+log.debug('loaded persistence file:', unwatchedPersistence);
+
+const persist = onChange(unwatchedPersistence, () => {
+    log.debug('Persistence changed');
+
+    const json = JSON.stringify(unwatchedPersistence);
+
+    fs.writeFile(config.persistenceFile, json, error => {
+        if (error) {
+            log.error('Error saving Persistence', error.message);
+            return;
+        }
+
+        log.debug('Persistence saved');
+    });
+});
 
 const scopes = ['playlist-read-private', 'playlist-read-collaborative', 'playlist-modify-public', 'playlist-modify-private'];
 const redirectUri = `http://localhost:${config.port}/callback`;
@@ -106,7 +139,7 @@ app.listen(config.port, () => {
     log.info(`${config.name} listening on port ${config.port}`);
 });
 
-let savedState = [];
+persist.playlistContent.Test = [];
 const mainScheduler = schedule.scheduleJob('0 0 4 * * *', async () => {
     try {
         if (await checkAuth()) {
@@ -122,7 +155,7 @@ const mainScheduler = schedule.scheduleJob('0 0 4 * * *', async () => {
             log.debug('Your playlist', tracksMine);
 
             // Get diff between locally saved state and "Playlist (save)", save to deleted playlist and get it
-            const deletedByMe = diff(savedState, tracksMine);
+            const deletedByMe = diff(persist.playlistContent.Test, tracksMine);
             await addTracks(blacklistPlaylist.id, deletedByMe);
             const tracksBlacklist = await getTracks(blacklistPlaylist.id);
             log.debug('New Blacklist', tracksBlacklist);
@@ -140,8 +173,8 @@ const mainScheduler = schedule.scheduleJob('0 0 4 * * *', async () => {
             await addTracks(myPlaylist.id, newTracksWithoutDeleted);
 
             // Save my playlist for next run
-            savedState = await getTracks(myPlaylist.id);
-            log.debug('New saved state', savedState);
+            persist.playlistContent.Test = await getTracks(myPlaylist.id);
+            log.debug('New saved state', persist.playlistContent.Test);
         } else {
             log.warn('Not authorized!');
         }
