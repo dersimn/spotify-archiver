@@ -216,7 +216,15 @@ async function checkAuth() {
 }
 
 function diff(a, b) {
-    return a.filter(x => !b.includes(x));
+    return a.filter(element => !b.includes(element));
+}
+
+function mergeUnique(a, b) {
+    return [...new Set([...a, ...b])];
+}
+
+function intersection(a, b) {
+    return a.filter(element => b.includes(element));
 }
 
 async function addTracks(id, list) {
@@ -245,7 +253,7 @@ async function playlistArchiveContents(sourceId, targetId) {
     log.debug('persist.playlists[targetId]', persist.playlists[targetId]);
     const deletedByMe = diff(persist.playlists[targetId], tracksTarget);
     log.debug('deletedByMe', deletedByMe);
-    persist.blacklists[targetId] = [...new Set([...persist.blacklists[targetId], ...deletedByMe])];
+    persist.blacklists[targetId] = mergeUnique(persist.blacklists[targetId], deletedByMe);
     log.debug('persist.blacklists[targetId]', persist.blacklists[targetId]);
 
     // Gett source playlist tracks
