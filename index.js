@@ -208,14 +208,20 @@ app.listen(config.port, () => {
 const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
     try {
         if (await checkAuth()) {
-            const myPlaylists = await spotify.getAllUserPlaylists();
-            log.debug('myPlaylists', myPlaylists.map(p => p.name));
-            const filteredPlaylists = myPlaylists.filter(p => p.name.startsWith('Test'));
+            const userPlaylists = await spotify.getAllUserPlaylists();
 
-            const originalPlaylist = filteredPlaylists.find(p => p.name === 'Test');
-            const myPlaylist = filteredPlaylists.find(p => /\(save\)$/.test(p.name));
+            for (const element of settings.archiver) {
+                let sourceId = element.source.id || userPlaylists.find(p => p.name === element.source.name).id;
+                let targetId = element.target.id || userPlaylists.find(p => p.name === element.target.name).id;
 
-            playlistArchiveContents(originalPlaylist.id, myPlaylist.id);
+                if (sourceId !== '' && targetId !== '') {
+                    log.debug(`archiving from ${sourceId} to ${targetId}`);
+
+                    playlistArchiveContents(sourceId, targetId);
+                } else {
+                    log.warn('could not get all IDs of', element);
+                }
+            }
         } else {
             log.error('Not authorized!');
         }
