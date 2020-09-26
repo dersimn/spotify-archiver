@@ -55,7 +55,8 @@ try {
 } catch {
     unwatchedPersistence = {
         tokens: {},
-        playlistContent: {}
+        playlists: {},
+        blacklists: {}
     };
 }
 
@@ -184,42 +185,17 @@ app.listen(config.port, () => {
 });
 
 // Scheduler
-persist.playlistContent.Test = [];
 const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
     try {
         if (await checkAuth()) {
             const myPlaylists = await spotify.getAllUserPlaylists();
+            log.debug('myPlaylists', myPlaylists.map(p => p.name));
             const filteredPlaylists = myPlaylists.filter(p => p.name.startsWith('Test'));
-            log.debug('Using playlists', filteredPlaylists.map(p => p.name));
 
             const originalPlaylist = filteredPlaylists.find(p => p.name === 'Test');
             const myPlaylist = filteredPlaylists.find(p => /\(save\)$/.test(p.name));
-            const blacklistPlaylist = filteredPlaylists.find(p => /\(deleted\)$/.test(p.name));
 
-            const tracksMine = await getTracks(myPlaylist.id);
-            log.debug('Your playlist', tracksMine);
-
-            // Get diff between locally saved state and "Playlist (save)", save to deleted playlist and get it
-            const deletedByMe = diff(persist.playlistContent.Test, tracksMine);
-            await addTracks(blacklistPlaylist.id, deletedByMe);
-            const tracksBlacklist = await getTracks(blacklistPlaylist.id);
-            log.debug('New Blacklist', tracksBlacklist);
-
-            // Gett source playlist tracks
-            const tracksOriginal = await getTracks(originalPlaylist.id);
-            log.debug('Source Playlist', tracksOriginal);
-
-            // Get new tracks, filter deleted/blacklisted tracks
-            const newTracks = diff(tracksOriginal, tracksMine);
-            log.debug('New tracks in source playlist', newTracks);
-            const newTracksWithoutDeleted = diff(newTracks, tracksBlacklist);
-
-            // Add new tracks to my playlist
-            await addTracks(myPlaylist.id, newTracksWithoutDeleted);
-
-            // Save my playlist for next run
-            persist.playlistContent.Test = await getTracks(myPlaylist.id);
-            log.debug('New saved state', persist.playlistContent.Test);
+            playlistArchiveContents(originalPlaylist.id, myPlaylist.id);
         } else {
             log.error('Not authorized!');
         }
@@ -251,4 +227,36 @@ async function addTracks(id, list) {
 
 async function getTracks(id) {
     return (await spotify.getAllPlaylistTracks(id)).map(t => t.track.uri);
+}
+
+async function playlistArchiveContents(sourceId, targetId) {
+    if (!persist.blacklists[targetId]) {
+        persist.blacklists[targetId] = [];
+    }
+
+    const tracksMine = await getTracks(targetId);
+    log.debug('Your playlist', tracksMine);
+
+    // Get diff between locally saved state and "Playlist (save)", save to deleted playlist and get it
+    log.debug('persist.playlistContent.Test', persist.playlistContent.Test);
+    const deletedByMe = diff(persist.playlistContent.Test, tracksMine);
+    log.debug('deletedByMe', deletedByMe);
+    persist.blacklists[targetId] = [...new Set([...persist.blacklists[targetId], ...deletedByMe])];
+    log.debug('blacklist', persist.blacklists[targetId]);
+
+    // Gett source playlist tracks
+    const tracksOriginal = await getTracks(sourceId);
+    log.debug('Source Playlist', tracksOriginal);
+
+    // Get new tracks, filter deleted/blacklisted tracks
+    const newTracks = diff(tracksOriginal, tracksMine);
+    log.debug('New tracks in source playlist', newTracks);
+    const newTracksWithoutDeleted = diff(newTracks, persist.blacklists[targetId]);
+
+    // Add new tracks to my playlist
+    await addTracks(targetId, newTracksWithoutDeleted);
+
+    // Save my playlist for next run
+    persist.playlistContent.Test = await getTracks(targetId);
+    log.debug('New saved state', persist.playlistContent.Test);
 }
