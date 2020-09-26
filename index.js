@@ -48,16 +48,17 @@ log.info(pkg.name + ' ' + pkg.version + ' starting');
 log.debug('loaded config:', config);
 
 // Load persistence
-let unwatchedPersistence;
+let unwatchedPersistence = {
+    tokens: {},
+    playlists: {},
+    blacklists: {}
+};
+
 try {
     const json = fs.readFileSync(config.persistenceFile);
-    unwatchedPersistence = JSON.parse(json);
+    unwatchedPersistence = Object.assign(unwatchedPersistence, JSON.parse(json));
 } catch {
-    unwatchedPersistence = {
-        tokens: {},
-        playlists: {},
-        blacklists: {}
-    };
+    // ...
 }
 
 log.debug('loaded persistence file:', unwatchedPersistence);
