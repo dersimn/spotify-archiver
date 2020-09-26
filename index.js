@@ -217,7 +217,7 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
             persist.playlistContent.Test = await getTracks(myPlaylist.id);
             log.debug('New saved state', persist.playlistContent.Test);
         } else {
-            log.warn('Not authorized!');
+            log.error('Not authorized!');
         }
     } catch (error) {
         log.error(error);
