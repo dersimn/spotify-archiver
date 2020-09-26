@@ -208,13 +208,23 @@ app.listen(config.port, () => {
 const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
     try {
         if (await checkAuth()) {
+            const userId = (await spotify.getMe()).body.id;
             const userPlaylists = await spotify.getAllUserPlaylists();
 
             for (const element of settings.archiver) {
-                let sourceId = element.source.id || userPlaylists.find(p => p.name === element.source.name).id;
-                let targetId = element.target.id || userPlaylists.find(p => p.name === element.target.name).id;
+                let sourceId = element.source.id || userPlaylists.find(p => p.name === element.source.name)?.id;
+                let targetId = element.target.id || userPlaylists.find(p => p.name === element.target.name)?.id;
 
-                if (sourceId !== '' && targetId !== '') {
+                if (sourceId && !targetId) {
+                    try {
+                        const tmp = await spotify.createPlaylist(userId, element.target.name, {public: false});
+                        targetId = tmp.body.id;
+                    } catch (error) {
+                        log.error('Error while creating playlist', error);
+                    }
+                }
+
+                if (sourceId && targetId) {
                     log.debug(`archiving from ${sourceId} to ${targetId}`);
 
                     playlistArchiveContents(sourceId, targetId);
