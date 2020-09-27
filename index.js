@@ -321,11 +321,11 @@ function playlistByNameInUserPlaylists(name, userPlaylists) {
 }
 
 async function addTracks(id, list) {
-    const chunkLen = 100;
+    const chunkLength = 100;
 
     if (Array.isArray(list) && list.length > 0) {
-        for (let i = 0; i < list.length; i += chunkLen) {
-            const chunk = list.slice(i, i + chunkLen);
+        for (let i = 0; i < list.length; i += chunkLength) {
+            const chunk = list.slice(i, i + chunkLength);
             try {
                 spotify.addTracksToPlaylist(id, chunk);
             } catch (error) {
