@@ -339,7 +339,11 @@ async function addTracks(id, list) {
 
 function getImageFromUrlAsBase64(url) {
     return new Promise((resolve, reject) => {
-        https.get(url, response => {
+        https.get(url, {
+            headers: {
+                Authorization: 'Bearer ' + spotify.getAccessToken()
+            }
+        }, response => {
             const contentType = response.headers['content-type'];
             if (contentType !== 'image/jpeg') {
                 throw new Error('Wrong content-type: ' + contentType);
