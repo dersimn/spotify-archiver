@@ -1,6 +1,7 @@
 /node_modules
 /persistence.json
 /docs
+/settings.yaml
 
 ## Git
 /.git
