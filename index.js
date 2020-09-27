@@ -200,70 +200,59 @@ app.listen(config.port, () => {
 
 // Scheduler
 const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
-    try {
-        if (await checkAuth()) {
-            const userId = (await spotify.getMe()).body.id;
-            const userPlaylists = await spotify.getAllUserPlaylists();
+    if (!await checkAuth()) {
+        log.error('Not authorized!');
+        return;
+    }
 
-            for (const element of settings.archiver) {
-                const sourceId =
-                    element.source.id ||
-                    playlistByNameInPersist(element.source.name)?.id ||
-                    playlistByNameInUserPlaylists(element.source.name, userPlaylists)?.id;
-                let targetId = element.target.id ||
-                    playlistByNameInPersist(element.target.name)?.id ||
-                    playlistByNameInUserPlaylists(element.target.name, userPlaylists)?.id;
+    const userId = (await spotify.getMe()).body.id;
+    const userPlaylists = await spotify.getAllUserPlaylists();
 
-                if (!sourceId) {
-                    log.warn('Source playlist could not be found', element.source.name);
-                    continue;
-                }
+    for (const element of settings.archiver) {
+        const sourceId =
+            element.source.id ||
+            playlistByNameInPersist(element.source.name)?.id ||
+            playlistByNameInUserPlaylists(element.source.name, userPlaylists)?.id;
 
-                if (sourceId && !targetId) {
-                    try {
-                        const tmp = await spotify.createPlaylist(userId, element.target.name, {public: false});
-                        targetId = tmp.body.id;
-                    } catch (error) {
-                        log.error('Error while creating playlist', error);
-                        continue;
-                    }
-                }
-
-                const sourceName = element.source.name ||
-                    userPlaylists.find(p => p.id === sourceId)?.name;
-                const targetName = element.target.name ||
-                    userPlaylists.find(p => p.id === targetId)?.name;
-
-                if (!persist.playlists[targetId]) {
-                    persist.playlists[targetId] = {
-                        tracks: [],
-                        blacklist: []
-                    };
-                }
-
-                if (!persist.playlists[sourceId]) {
-                    persist.playlists[sourceId] = {
-                        tracks: [],
-                        blacklist: []
-                    };
-                }
-
-                persist.playlists[sourceId].name = sourceName;
-                persist.playlists[targetId].name = targetName;
-
-                log.debug(`archiving from ${sourceName} (${sourceId}) to ${targetName} (${targetId})`);
-
-                try {
-                    await playlistArchiveContents(sourceId, targetId);
-                } catch (error) {
-                    log.error(error);
-                }
-            }
-        } else {
-            log.error('Not authorized!');
+        if (!sourceId) {
+            log.warn('Source playlist could not be found', element.source.name);
+            continue;
         }
-    } catch (error) {
-        log.error(error);
+
+        const targetId = element.target.id ||
+            playlistByNameInPersist(element.target.name)?.id ||
+            playlistByNameInUserPlaylists(element.target.name, userPlaylists)?.id ||
+            (await spotify.createPlaylist(userId, element.target.name, {public: false})).body.id;
+
+        const sourceName = element.source.name ||
+            userPlaylists.find(p => p.id === sourceId)?.name;
+        const targetName = element.target.name ||
+            userPlaylists.find(p => p.id === targetId)?.name;
+
+        if (!persist.playlists[targetId]) {
+            persist.playlists[targetId] = {
+                tracks: [],
+                blacklist: []
+            };
+        }
+
+        if (!persist.playlists[sourceId]) {
+            persist.playlists[sourceId] = {
+                tracks: [],
+                blacklist: []
+            };
+        }
+
+        persist.playlists[sourceId].name = sourceName;
+        persist.playlists[targetId].name = targetName;
+
+        log.debug(`archiving from ${sourceName} (${sourceId}) to ${targetName} (${targetId})`);
+
+        try {
+            await playlistArchiveContents(sourceId, targetId);
+        } catch (error) {
+            log.error(error);
+        }
     }
 });
 log.debug('scheduler', mainScheduler);
