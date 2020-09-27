@@ -316,7 +316,7 @@ async function addTracks(id, list) {
         for (let i = 0; i < list.length; i += chunkLength) {
             const chunk = list.slice(i, i + chunkLength);
             try {
-                spotify.addTracksToPlaylist(id, chunk);
+                await spotify.addTracksToPlaylist(id, chunk);
             } catch (error) {
                 throw new Error('Error in addTracks', id, 'chunk', i, error);
             }
