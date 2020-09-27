@@ -316,13 +316,24 @@ function playlistByNameInUserPlaylists(name, userPlaylists) {
 }
 
 async function addTracks(id, list) {
+    const chunkLen = 100;
+
     if (Array.isArray(list) && list.length > 0) {
-        return spotify.addTracksToPlaylist(id, list);
+        for (let i = 0; i < list.length; i += chunkLen) {
+            const chunk = list.slice(i, i + chunkLen);
+            try {
+                spotify.addTracksToPlaylist(id, chunk);
+            } catch (error) {
+                throw new Error('Error in addTracks', id, 'chunk', i, error);
+            }
+        }
     }
 }
 
 async function getTracks(id) {
-    return (await spotify.getAllPlaylistTracks(id)).map(t => t.track.uri);
+    const raw = await spotify.getAllPlaylistTracks(id);
+    const tracks = raw.filter(t => t.track?.uri);
+    return tracks.map(t => t.track.uri);
 }
 
 async function playlistArchiveContents(sourceId, targetId) {
