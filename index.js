@@ -4,8 +4,9 @@ const fs = require('fs');
 const https = require('https');
 const pkg = require('./package.json');
 const log = require('yalm');
+const environmentVariablesPrefix = pkg.name.replace(/[^a-zA-Z\d]/, '_').toUpperCase();
 const config = require('yargs')
-    .env(pkg.name.replace(/[^a-zA-Z\d]/, '_').toUpperCase())
+    .env(environmentVariablesPrefix)
     .usage(pkg.name + ' ' + pkg.version + '\n' + pkg.description + '\n\nUsage: $0 [options]')
     .describe('verbosity', 'Possible values: "error", "warn", "info", "debug"')
     .describe('port', 'Local port for the http server providing the authorization callback.')
@@ -15,6 +16,7 @@ const config = require('yargs')
     .describe('schedule', 'Cron-like node-schedule expression when to run this script.')
     .describe('persistence-file', 'Path to persistence.json file.')
     .describe('settings-file', 'Path to settings.yaml file.')
+    .describe('redirect-url', 'URL where this script can be reached if you run it on a remote server or behind a proxy.')
     .alias({
         h: 'help',
         p: 'port',
@@ -47,6 +49,7 @@ const yaml = require('js-yaml');
 log.setLevel(config.verbosity);
 log.info(pkg.name + ' ' + pkg.version + ' starting');
 log.debug('loaded config:', config);
+log.debug('ENV Prefix:', environmentVariablesPrefix);
 
 // Load persistence
 let unwatchedPersistence = {
@@ -106,7 +109,7 @@ log.debug('loaded settings', settings);
 
 // Prepare Spotify Api
 const scopes = ['playlist-read-private', 'playlist-read-collaborative', 'playlist-modify-public', 'playlist-modify-private'];
-const redirectUri = `http://localhost:${config.port}/callback`;
+const redirectUri = config.redirectUrl || `http://localhost:${config.port}/callback`;
 
 const spotify = new SpotifyWebApi({
     redirectUri,
