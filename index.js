@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
+const https = require('https');
 const pkg = require('./package.json');
 const log = require('yalm');
 const config = require('yargs')
@@ -224,6 +225,15 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
             playlistByNameInUserPlaylists(element.target.name, userPlaylists)?.id ||
             (await spotify.createPlaylist(userId, element.target.name, {public: false})).body.id;
 
+        // Copy over Cover Image
+        try {
+            const sourcePlaylist = (await spotify.getPlaylist(sourceId)).body;
+            const imageBase64 = await getImageFromUrlAsBase64(sourcePlaylist.images[0].url);
+            await spotify.uploadCustomPlaylistCoverImage(targetId, imageBase64);
+        } catch (error) {
+            log.warn('Error copying Cover Image ' + error);
+        }
+
         const sourceName = element.source.name ||
             userPlaylists.find(p => p.id === sourceId)?.name;
         const targetName = element.target.name ||
@@ -322,6 +332,27 @@ async function addTracks(id, list) {
             }
         }
     }
+}
+
+function getImageFromUrlAsBase64(url) {
+    return new Promise((resolve, reject) => {
+        https.get(url, response => {
+            const contentType = response.headers['content-type'];
+            if (contentType !== 'image/jpeg') {
+                throw new Error('Wrong content-type: ' + contentType);
+            }
+
+            const data = [];
+            response.on('data', chunk => {
+                data.push(chunk);
+            });
+            response.on('end', () => {
+                resolve(Buffer.concat(data).toString('base64'));
+            });
+        }).on('error', error => {
+            reject(error);
+        });
+    });
 }
 
 async function getTracks(id) {
