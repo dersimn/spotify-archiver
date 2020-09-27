@@ -4,6 +4,8 @@ This script searches once in a while for changes in a source playlist (e.g. "Goo
 
 If you absolutely dislike a song, you can remove it from the proxy playlist (e.g. "Good Music (save)") and it will not be re-added on the next cycle.
 
+> :warning: **Use at your own risk.** In case of doubt, check the source code for errors before use.
+
 ## Configure
 
 Create `settings.yaml` with a list of playlists that you would like to archive daily:
