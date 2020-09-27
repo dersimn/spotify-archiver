@@ -33,7 +33,13 @@
     "space": 4,
     "rules": {
       "unicorn/prevent-abbreviations": [
-        "warn"
+        "warn",
+        {
+          "whitelist": {
+            "tmp": true,
+            "obj": true
+          }
+        }
       ],
       "no-await-in-loop": [
         "warn"
