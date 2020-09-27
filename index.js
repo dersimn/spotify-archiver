@@ -199,7 +199,7 @@ app.get('/callback', (request, response) => {
 });
 
 app.listen(config.port, () => {
-    log.info(`${pkg.name} listening on port ${config.port}`);
+    log.info(`${pkg.name} listening on port ${config.port}. Open with your browser: http://THIS_IP:${config.port}/login`);
 });
 
 // Scheduler
