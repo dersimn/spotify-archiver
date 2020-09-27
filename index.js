@@ -252,7 +252,12 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
                 persist.playlists[targetId].name = targetName;
 
                 log.debug(`archiving from ${sourceName} (${sourceId}) to ${targetName} (${targetId})`);
-                playlistArchiveContents(sourceId, targetId);
+
+                try {
+                    await playlistArchiveContents(sourceId, targetId);
+                } catch (error) {
+                    log.error(error);
+                }
             }
         } else {
             log.error('Not authorized!');
