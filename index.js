@@ -142,7 +142,7 @@ const spotify = new SpotifyWebApi({
 });
 const swat = new SpotifyWebApiTools(spotify);
 
-const refreshTimer = new Yatl.Timer(async () => {
+async function refreshToken() {
     const data = await spotify.refreshAccessToken();
 
     const accessToken = data.body.access_token;
@@ -158,7 +158,9 @@ const refreshTimer = new Yatl.Timer(async () => {
         log.debug('Setting Refresh Interval', refreshInterval);
         refreshTimer.restart(refreshInterval);
     }
-});
+}
+
+const refreshTimer = new Yatl.Timer(refreshToken);
 
 // Check Auth Status on Start
 checkAuth().then(result => {
