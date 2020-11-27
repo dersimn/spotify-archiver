@@ -148,7 +148,7 @@ async function refreshToken() {
     const accessToken = data.body.access_token;
     const expiresIn = data.body.expires_in;
 
-    log.info('Access Token has been refreshed:', accessToken);
+    log.debug('Access Token has been refreshed:', accessToken);
 
     spotify.setAccessToken(accessToken);
     persist.tokens.accessToken = accessToken;
@@ -163,14 +163,18 @@ async function refreshToken() {
 const refreshTimer = new Yatl.Timer(refreshToken);
 
 // Check Auth Status on Start
-checkAuth().then(result => {
-    log.debug('Check auth:', result);
-
-    if (result) {
-        refreshTimer.exec();
-        mainScheduler.invoke();
+(async () => {
+    if (persist.tokens.refreshToken) {
+        await refreshToken();
+        if (await checkAuth()) {
+            mainScheduler.invoke();
+        } else {
+            log.error('Cloud not refresh token');
+        }
+    } else {
+        log.info('Please authenticate via web browser.');
     }
-});
+})();
 
 // Provide HTTP Callback Server for Auth
 const app = express();
