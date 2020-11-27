@@ -297,6 +297,8 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
             log.error(error);
         }
     }
+
+    log.info('Job finished');
 });
 log.debug('scheduler', mainScheduler);
 
