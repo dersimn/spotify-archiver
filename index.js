@@ -101,6 +101,27 @@ const settings = (() => {
                 }
             });
         }
+
+        if (typeof element === 'object') {
+            tmp.archiver.push({
+                source: {
+                    name: element.name,
+                    id: element.id
+                },
+                target: {
+                    name: (element => {
+                        if (typeof element === 'string') {
+                            return element;
+                        }
+
+                        if (typeof element === 'object') {
+                            return element.name;
+                        }
+                    })(element.saved),
+                    id: element.saved?.id
+                }
+            });
+        }
     }
 
     return tmp;
@@ -223,7 +244,8 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
             continue;
         }
 
-        const targetId = element.target.id ||
+        const targetId =
+            element.target.id ||
             playlistByNameInPersist(element.target.name)?.id ||
             playlistByNameInUserPlaylists(element.target.name, userPlaylists)?.id ||
             (await spotify.createPlaylist(userId, element.target.name, {public: false})).body.id;
