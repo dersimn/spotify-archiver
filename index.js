@@ -240,7 +240,7 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
             playlistByNameInUserPlaylists(element.source.name, userPlaylists)?.id;
 
         if (!sourceId) {
-            log.warn('Source playlist could not be found', element.source.name);
+            log.warn(`Source playlist '${element.source.name}' could not be found.`);
             continue;
         }
 
@@ -323,7 +323,7 @@ function playlistByNameInPersist(name) {
     }
 
     if (count > 1) {
-        throw new Error('Playlist Name not unique');
+        throw new Error('Playlist Name not unique ' + name);
     }
 }
 
