@@ -248,6 +248,11 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
                 playlistByNameInPersist(element.source.name)?.id ||
                 (await swat.findUserPlaylistByName(element.source.name, userPlaylists))?.id;
 
+            if (!sourceId) {
+                log.warn(`Source playlist '${element.source.name}' could not be found.`);
+                continue;
+            }
+
             const targetId =
                 element.target.id ||
                 playlistByNameInPersist(element.target.name)?.id ||
