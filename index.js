@@ -245,7 +245,7 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
         try {
             const sourceId =
                 element.source.id ||
-                playlistByNameInPersist(element.source.name)?.id ||
+                playlistIdByNameInPersist(element.source.name) ||
                 (await swat.findUserPlaylistByName(element.source.name, userPlaylists))?.id;
 
             if (!sourceId) {
@@ -255,7 +255,7 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
 
             const targetId =
                 element.target.id ||
-                playlistByNameInPersist(element.target.name)?.id ||
+                playlistIdByNameInPersist(element.target.name) ||
                 (await swat.findUserPlaylistByName(element.target.name, userPlaylists))?.id ||
                 (await spotify.createPlaylist(element.target.name, {public: false})).body.id;
 
@@ -318,12 +318,12 @@ function mergeUnique(a, b) {
     return [...new Set([...a, ...b])];
 }
 
-function playlistByNameInPersist(name) {
+function playlistIdByNameInPersist(name) {
     const filtered = objectFilter(persist.playlists, (id, playlist) => playlist.name === name);
     const count = Object.keys(filtered).length;
 
     if (count === 1) {
-        return Object.entries(filtered)[0][1];
+        return Object.entries(filtered)[0][0];
     }
 
     if (count === 0) {
