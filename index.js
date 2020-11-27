@@ -39,6 +39,7 @@ const config = require('yargs')
     .help('help')
     .argv;
 const SpotifyWebApi = require('spotify-web-api-node');
+const SpotifyWebApiTools = require('./spotify-web-api-tools.js');
 const express = require('express');
 const schedule = require('node-schedule');
 const onChange = require('on-change');
@@ -139,6 +140,7 @@ const spotify = new SpotifyWebApi({
     accessToken: persist.tokens.accessToken,
     refreshToken: persist.tokens.refreshToken
 });
+const swat = new SpotifyWebApiTools(spotify);
 
 const refreshTimer = new Yatl.Timer(async () => {
     const data = await spotify.refreshAccessToken();
@@ -231,59 +233,54 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
     }
 
     const userId = (await spotify.getMe()).body.id;
-    const userPlaylists = await spotify.getAllUserPlaylists();
+    const userPlaylists = await swat.getAllUserPlaylists();
 
     for (const element of settings.archiver) {
-        const sourceId =
-            element.source.id ||
-            playlistByNameInPersist(element.source.name)?.id ||
-            playlistByNameInUserPlaylists(element.source.name, userPlaylists)?.id;
-
-        if (!sourceId) {
-            log.warn(`Source playlist '${element.source.name}' could not be found.`);
-            continue;
-        }
-
-        const targetId =
-            element.target.id ||
-            playlistByNameInPersist(element.target.name)?.id ||
-            playlistByNameInUserPlaylists(element.target.name, userPlaylists)?.id ||
-            (await spotify.createPlaylist(userId, element.target.name, {public: false})).body.id;
-
-        // Copy over Cover Image
         try {
-            const sourcePlaylist = (await spotify.getPlaylist(sourceId)).body;
-            const imageBase64 = await getImageFromUrlAsBase64(sourcePlaylist.images[0].url);
-            await spotify.uploadCustomPlaylistCoverImage(targetId, imageBase64);
-        } catch (error) {
-            log.warn('Error copying Cover Image ' + error);
-        }
+            const sourceId =
+                element.source.id ||
+                playlistByNameInPersist(element.source.name)?.id ||
+                (await swat.findUserPlaylistByName(element.source.name, userPlaylists))?.id;
 
-        const sourceName = element.source.name ||
-            userPlaylists.find(p => p.id === sourceId)?.name;
-        const targetName = element.target.name ||
-            userPlaylists.find(p => p.id === targetId)?.name;
+            const targetId =
+                element.target.id ||
+                playlistByNameInPersist(element.target.name)?.id ||
+                (await swat.findUserPlaylistByName(element.target.name, userPlaylists))?.id ||
+                (await spotify.createPlaylist(element.target.name, {public: false})).body.id;
 
-        if (!persist.playlists[targetId]) {
-            persist.playlists[targetId] = {
-                tracks: [],
-                blacklist: []
-            };
-        }
+            // Copy over Cover Image
+            try {
+                const sourcePlaylist = (await spotify.getPlaylist(sourceId)).body;
+                const imageBase64 = await getImageFromUrlAsBase64(sourcePlaylist.images[0].url);
+                await spotify.uploadCustomPlaylistCoverImage(targetId, imageBase64);
+            } catch (error) {
+                log.warn('Error copying Cover Image ' + error);
+            }
 
-        if (!persist.playlists[sourceId]) {
-            persist.playlists[sourceId] = {
-                tracks: [],
-                blacklist: []
-            };
-        }
+            const sourceName = element.source.name ||
+                userPlaylists.find(p => p.id === sourceId)?.name;
+            const targetName = element.target.name ||
+                userPlaylists.find(p => p.id === targetId)?.name;
 
-        persist.playlists[sourceId].name = sourceName;
-        persist.playlists[targetId].name = targetName;
+            if (!persist.playlists[targetId]) {
+                persist.playlists[targetId] = {
+                    tracks: [],
+                    blacklist: []
+                };
+            }
 
-        log.debug(`archiving from ${sourceName} (${sourceId}) to ${targetName} (${targetId})`);
+            if (!persist.playlists[sourceId]) {
+                persist.playlists[sourceId] = {
+                    tracks: [],
+                    blacklist: []
+                };
+            }
 
-        try {
+            persist.playlists[sourceId].name = sourceName;
+            persist.playlists[targetId].name = targetName;
+
+            log.debug(`archiving from ${sourceName} (${sourceId}) to ${targetName} (${targetId})`);
+
             await playlistArchiveContents(sourceId, targetId);
         } catch (error) {
             log.error(error);
@@ -324,23 +321,6 @@ function playlistByNameInPersist(name) {
 
     if (count > 1) {
         throw new Error('Playlist Name not unique ' + name);
-    }
-}
-
-function playlistByNameInUserPlaylists(name, userPlaylists) {
-    const filtered = userPlaylists.filter(p => p.name === name);
-    const count = filtered.length;
-
-    if (count === 1) {
-        return filtered[0];
-    }
-
-    if (count === 0) {
-        return;
-    }
-
-    if (count > 1) {
-        throw new Error('Playlist Name not unique');
     }
 }
 
@@ -385,7 +365,7 @@ function getImageFromUrlAsBase64(url) {
 }
 
 async function getTracks(id) {
-    const raw = await spotify.getAllPlaylistTracks(id);
+    const raw = await swat.getAllPlaylistTracks(id);
     const tracks = raw.filter(t => t.track?.uri);
     return tracks.map(t => t.track.uri);
 }
