@@ -73,8 +73,9 @@ Development:
 
 Docker development build:
 
-    docker build -t dersimn/spotify-archiver .
-    docker run -it -p 8888:8888 dersimn/spotify-archiver -i <CLIENT_ID> -s <CLIENT_SECRET> -v debug
+    docker build -t spotify-archiver .
+    docker run -it -p 8888:8888 spotify-archiver -i <CLIENT_ID> -s <CLIENT_SECRET> -v debug
+    docker run -it --entrypoint bash spotify-archiver
 
 Docker Hub deploy:
 
