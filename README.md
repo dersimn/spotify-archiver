@@ -35,10 +35,10 @@ docker run -d \
     -p 8888:8888 \
     -v /opt/spotify-archiver/settings.yaml:/app/settings.yaml:ro \
     -v /opt/spotify-archiver/persistence:/persistence \
-    -e SPOTIFY_ARCHIVER_PERSISTENCE_FILE="/persistence/data.json"
+    -e SPOTIFY_ARCHIVER_PERSISTENCE_FILE="/persistence/data.json" \
     -e SPOTIFY_ARCHIVER_REDIRECT_URL="http://<LOCAL_IP_OF_DOCKER_HOST>:8888/callback" \
-    -e SPOTIFY_ARCHIVER_CLIENT_ID=<CLIENT_ID>
-    -e SPOTIFY_ARCHIVER_CLIENT_SECRET=<CLIENT_SECRET>
+    -e SPOTIFY_ARCHIVER_CLIENT_ID=<CLIENT_ID> \
+    -e SPOTIFY_ARCHIVER_CLIENT_SECRET=<CLIENT_SECRET> \
     dersimn/spotify-archiver
 ```
 
