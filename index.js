@@ -333,11 +333,9 @@ async function copyCoverImage(sourceId, targetId) {
     try {
         const sourcePlaylist = (await spotify.getPlaylist(sourceId)).body;
         const imageUrl = sourcePlaylist.images[0].url;
-        log.debug('copyCoverImage', sourceId, targetId, 'downloading', imageUrl);
-        const imageBase64 = await getImageFromUrlAsBase64(sourcePlaylist.images[0].url);
-        log.debug('copyCoverImage', sourceId, targetId, 'got image');
+        const imageBase64 = await getImageFromUrlAsBase64(imageUrl);
         await spotify.uploadCustomPlaylistCoverImage(targetId, imageBase64);
-        log.debug('copyCoverImage', sourceId, targetId, 'uploaded image');
+        log.debug('copyCoverImage', sourceId, targetId);
         return true;
     } catch (error) {
         log.warn('Error copying Cover Image ' + error);
