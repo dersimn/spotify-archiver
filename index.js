@@ -238,7 +238,7 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
         return;
     }
 
-    const userId = (await spotify.getMe()).body.id;
+    // const userId = (await spotify.getMe()).body.id;
     const userPlaylists = await swat.getAllUserPlaylists();
 
     for (const element of settings.archiver) {

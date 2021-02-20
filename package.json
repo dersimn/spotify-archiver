@@ -32,17 +32,19 @@
   "xo": {
     "space": 4,
     "rules": {
+      "no-await-in-loop": "warn",
+      "unicorn/no-reduce": "warn",
+      "capitalized-comments": "warn",
+      "curly": ["error", "multi-line"],
       "unicorn/prevent-abbreviations": [
-        "warn",
+        "error",
         {
           "whitelist": {
+            "pkg": true,
             "tmp": true,
             "obj": true
           }
         }
-      ],
-      "no-await-in-loop": [
-        "warn"
       ]
     }
   }
