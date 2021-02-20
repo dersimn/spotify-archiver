@@ -61,7 +61,14 @@ let unwatchedPersistence = {
 
 try {
     const json = fs.readFileSync(config.persistenceFile);
-    unwatchedPersistence = Object.assign(unwatchedPersistence, JSON.parse(json));
+    unwatchedPersistence = Object.assign(unwatchedPersistence, JSON.parse(json, (key, value) => {
+        // Load special Arrays as Set
+        if (key === 'blacklist' && Array.isArray(value)) {
+            return new Set(value);
+        }
+
+        return value;
+    }));
 } catch {
     // ...
 }
@@ -69,7 +76,14 @@ try {
 log.debug('loaded persistence file:', unwatchedPersistence);
 
 const persist = onChange(unwatchedPersistence, () => {
-    const json = JSON.stringify(unwatchedPersistence, ...((config.verbosity === 'debug') ? [null, 2] : []));
+    const json = JSON.stringify(unwatchedPersistence, (key, value) => {
+        // Save Set as Array
+        if (typeof value === 'object' && value instanceof Set) {
+            return [...value];
+        }
+
+        return value;
+    }, ...((config.verbosity === 'debug') ? [2] : []));
 
     fs.writeFile(config.persistenceFile, json, error => {
         if (error) {
@@ -282,14 +296,14 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
             if (!persist.playlists[targetId]) {
                 persist.playlists[targetId] = {
                     tracks: [],
-                    blacklist: []
+                    blacklist: new Set()
                 };
             }
 
             if (!persist.playlists[sourceId]) {
                 persist.playlists[sourceId] = {
                     tracks: [],
-                    blacklist: []
+                    blacklist: new Set()
                 };
             }
 
@@ -341,11 +355,18 @@ async function checkAuth() {
 }
 
 function diff(a, b) {
-    return a.filter(element => !b.includes(element));
-}
+    return a.filter(element => {
+        if (Array.isArray(b)) {
+            return !b.includes(element);
+        }
 
-function mergeUnique(a, b) {
-    return [...new Set([...a, ...b])];
+        if (b instanceof Set) {
+            return !b.has(element);
+        }
+
+        // Fallback: return empty array
+        return false;
+    });
 }
 
 function findPlaylistIdByNameInPersist(name) {
@@ -415,7 +436,7 @@ async function playlistArchiveContents(sourceId, targetId) {
     if (!persist.playlists[targetId]) {
         persist.playlists[targetId] = {
             tracks: [],
-            blacklist: []
+            blacklist: new Set()
         };
     }
 
@@ -423,7 +444,7 @@ async function playlistArchiveContents(sourceId, targetId) {
 
     // Get diff between locally saved state and "Playlist (save)", save to deleted playlist and get it
     const deletedByMe = diff(persist.playlists[targetId].tracks, tracksTarget);
-    persist.playlists[targetId].blacklist = mergeUnique(persist.playlists[targetId].blacklist, deletedByMe);
+    if (deletedByMe.length > 0) persist.playlists[targetId].blacklist.add(...deletedByMe);
 
     // Gett source playlist tracks
     const tracksSource = await getTracks(sourceId);
