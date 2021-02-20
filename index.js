@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
+const util = require('util');
 const https = require('https');
 const pkg = require('./package.json');
 const log = require('yalm');
@@ -91,6 +92,16 @@ const settings = (() => {
         archiver: []
     };
 
+    function nameByStringOrObject(option) {
+        if (typeof option === 'string') {
+            return option;
+        }
+
+        if (typeof option === 'object') {
+            return option.name;
+        }
+    }
+
     for (const element of yamlfile.archiver) {
         if (typeof element === 'string') {
             tmp.archiver.push({
@@ -106,20 +117,12 @@ const settings = (() => {
         if (typeof element === 'object') {
             tmp.archiver.push({
                 source: {
-                    name: element.name,
-                    id: element.id
+                    name: nameByStringOrObject(element.source),
+                    id: element.source.id
                 },
                 target: {
-                    name: (element => {
-                        if (typeof element === 'string') {
-                            return element;
-                        }
-
-                        if (typeof element === 'object') {
-                            return element.name;
-                        }
-                    })(element.saved),
-                    id: element.saved?.id
+                    name: nameByStringOrObject(element.target),
+                    id: element.target.id
                 }
             });
         }
@@ -127,7 +130,7 @@ const settings = (() => {
 
     return tmp;
 })();
-log.debug('loaded settings', settings);
+log.debug('loaded settings', util.inspect(settings, {depth: null, colors: true}));
 
 // Prepare Spotify Api
 const scopes = ['playlist-read-private', 'playlist-read-collaborative', 'playlist-modify-public', 'playlist-modify-private'];

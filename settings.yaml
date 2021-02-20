@@ -2,6 +2,8 @@
 archiver:
   - Not existing Playlist
   - Test
-  - Test New
-  - id: 6kHxQBzz24EBUx6OR149Oi
-    saved: Test New (save by id)
+  - source: Test
+    target: Test (object-config)
+  - source:
+      id: 1gkbBs6dbYLGA5HLwubHN7
+    target: Test (by id)
