@@ -273,9 +273,16 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
     const userPlaylists = await swat.getAllUserPlaylists();
 
     // Fetch global blacklist playlist
-    if (settings.global.blacklist.enabled && settings.global.blacklist.id) {
-        const blacklistedTracks = await getTracks(settings.global.blacklist.id);
-        blacklistedTracks.forEach(i => persist.blacklist.add(i));
+    if (settings.global.blacklist.enabled) {
+        // We have to use unwatchedPersistence instead of persist here, because of sindresorhus/on-change#76
+        for (const [, playlist] of Object.entries(unwatchedPersistence.playlists)) {
+            playlist.blacklist.forEach(i => persist.blacklist.add(i));
+        }
+
+        if (settings.global.blacklist.id) {
+            const blacklistedTracks = await getTracks(settings.global.blacklist.id);
+            blacklistedTracks.forEach(i => persist.blacklist.add(i));
+        }
     }
 
     for (const element of settings.archiver) {
