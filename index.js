@@ -106,10 +106,12 @@ const settings = (() => {
         if (typeof element === 'string') {
             tmp.archiver.push({
                 source: {
-                    name: element
+                    name: element,
+                    findByPersistence: false
                 },
                 target: {
-                    name: element + ' (save)'
+                    name: element + ' (save)',
+                    findByPersistence: true
                 }
             });
         }
@@ -118,11 +120,13 @@ const settings = (() => {
             tmp.archiver.push({
                 source: {
                     name: nameByStringOrObject(element.source),
-                    id: element.source.id
+                    id: element.source.id,
+                    findByPersistence: element.source.findByPersistence ?? false
                 },
                 target: {
                     name: nameByStringOrObject(element.target),
-                    id: element.target.id
+                    id: element.target.id,
+                    findByPersistence: element.source.findByPersistence ?? true
                 }
             });
         }
@@ -248,7 +252,7 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
         try {
             const sourceId =
                 element.source.id ||
-                playlistIdByNameInPersist(element.source.name) ||
+                (element.source.findByPersistence && findPlaylistIdByNameInPersist(element.source.name)) ||
                 (await swat.findUserPlaylistByName(element.source.name, userPlaylists))?.id;
 
             if (!sourceId) {
@@ -258,7 +262,7 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
 
             const targetId =
                 element.target.id ||
-                playlistIdByNameInPersist(element.target.name) ||
+                (element.target.findByPersistence && findPlaylistIdByNameInPersist(element.target.name)) ||
                 (await swat.findUserPlaylistByName(element.target.name, userPlaylists))?.id ||
                 (await spotify.createPlaylist(element.target.name, {public: false})).body.id;
 
@@ -323,7 +327,7 @@ function mergeUnique(a, b) {
     return [...new Set([...a, ...b])];
 }
 
-function playlistIdByNameInPersist(name) {
+function findPlaylistIdByNameInPersist(name) {
     const filtered = objectFilter(persist.playlists, (id, playlist) => playlist.name === name);
     const count = Object.keys(filtered).length;
 

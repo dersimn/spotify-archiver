@@ -7,3 +7,7 @@ archiver:
   - source:
       id: 1gkbBs6dbYLGA5HLwubHN7
     target: Test (by id)
+  - source:
+      name: Test (renamable)
+      findByPersistence: true
+    target: Test - Copy of renamed Playlist
