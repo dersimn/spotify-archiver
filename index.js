@@ -151,7 +151,7 @@ const spotify = new SpotifyWebApi({
 });
 const swat = new SpotifyWebApiTools(spotify);
 
-async function refreshToken() {
+async function doRefreshToken() {
     const data = await spotify.refreshAccessToken();
 
     const accessToken = data.body.access_token;
@@ -169,12 +169,12 @@ async function refreshToken() {
     }
 }
 
-const refreshTimer = new Yatl.Timer(refreshToken);
+const refreshTimer = new Yatl.Timer(doRefreshToken);
 
 // Check Auth Status on Start
 (async () => {
     if (persist.tokens.refreshToken) {
-        await refreshToken();
+        await doRefreshToken();
         if (await checkAuth()) {
             mainScheduler.invoke();
         } else {
@@ -205,7 +205,7 @@ app.get('/callback', (request, response) => {
     const state = request.query.state;
     log.debug('Callback', code, state);
 
-    spotify.authorizationCodeGrant(code).then(data => {
+    spotify.authorizationCodeGrant(code).then(async data => {
         const accessToken = data.body.access_token;
         const refreshToken = data.body.refresh_token;
         const expiresIn = data.body.expires_in;
@@ -221,7 +221,8 @@ app.get('/callback', (request, response) => {
         log.info(`Sucessfully retreived access token. Expires in ${expiresIn} s.`);
         response.send('Success! You can now close the window.');
 
-        refreshTimer.restart(expiresIn / 2 * 1000);
+        // Refresh token once, otherwise uploading images doesn't work due to some bug in Spotify Web API
+        await doRefreshToken();
 
         checkAuth().then(result => {
             log.debug('Check auth:', result);
