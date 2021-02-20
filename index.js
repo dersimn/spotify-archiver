@@ -73,7 +73,7 @@ try {
     // ...
 }
 
-log.debug('loaded persistence file:', unwatchedPersistence);
+log.debug('loaded persistence file', util.inspect(unwatchedPersistence, {depth: 1, colors: true}));
 
 const persist = onChange(unwatchedPersistence, () => {
     const json = JSON.stringify(unwatchedPersistence, (key, value) => {
@@ -320,7 +320,7 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
 
     log.info('Job finished');
 });
-log.debug('scheduler', mainScheduler);
+log.debug('scheduler created');
 
 // Functions
 async function createNewPlaylistFromSource(sourceId, targetName) {
