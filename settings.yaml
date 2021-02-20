@@ -1,4 +1,8 @@
 ---
+global:
+  blacklist:
+    enabled: true
+    id: 0WqRYEtkaDQs6cfPrOAPEr
 archiver:
   - Not existing Playlist
   - Test

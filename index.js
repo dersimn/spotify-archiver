@@ -56,7 +56,8 @@ log.debug('ENV Prefix:', environmentVariablesPrefix);
 // Load persistence
 let unwatchedPersistence = {
     tokens: {},
-    playlists: {}
+    playlists: {},
+    blacklist: new Set()
 };
 
 try {
@@ -103,6 +104,12 @@ const settings = (() => {
     }
 
     const tmp = {
+        global: {
+            blacklist: {
+                enabled: yamlfile.global.blacklist.enabled ?? false,
+                id: yamlfile.global.blacklist.id ?? null
+            }
+        },
         archiver: []
     };
 
@@ -265,6 +272,12 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
     // const userId = (await spotify.getMe()).body.id;
     const userPlaylists = await swat.getAllUserPlaylists();
 
+    // Fetch global blacklist playlist
+    if (settings.global.blacklist.enabled && settings.global.blacklist.id) {
+        const blacklistedTracks = await getTracks(settings.global.blacklist.id);
+        if (blacklistedTracks.length > 0) persist.blacklist.add(...blacklistedTracks);
+    }
+
     for (const element of settings.archiver) {
         try {
             const sourceId =
@@ -318,6 +331,12 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
         }
     }
 
+    // Write global blacklist playlist to Spotify
+    if (settings.global.blacklist.enabled && settings.global.blacklist.id) {
+        // We have to use unwatchedPersistence instead of persist here, because of sindresorhus/on-change#76
+        await addTracksSkipDuplicates(settings.global.blacklist.id, unwatchedPersistence.blacklist);
+    }
+
     log.info('Job finished');
 });
 log.debug('scheduler created');
@@ -353,7 +372,7 @@ async function checkAuth() {
 }
 
 function diff(a, b) {
-    return a.filter(element => {
+    return [...a].filter(element => {
         if (Array.isArray(b)) {
             return !b.includes(element);
         }
@@ -382,6 +401,12 @@ function findPlaylistIdByNameInPersist(name) {
     if (count > 1) {
         throw new Error('Playlist Name not unique ' + name);
     }
+}
+
+async function addTracksSkipDuplicates(id, list) {
+    const initialContent = await getTracks(id);
+    const newTracks = diff(list, initialContent);
+    return addTracks(id, newTracks);
 }
 
 async function addTracks(id, list) {
@@ -442,7 +467,13 @@ async function playlistArchiveContents(sourceId, targetId) {
 
     // Get diff between locally saved state and "Playlist (save)", save to deleted playlist and get it
     const deletedByMe = diff(persist.playlists[targetId].tracks, tracksTarget);
-    if (deletedByMe.length > 0) persist.playlists[targetId].blacklist.add(...deletedByMe);
+
+    if (deletedByMe.length > 0) {
+        persist.playlists[targetId].blacklist.add(...deletedByMe);
+        if (settings.global.blacklist.enabled) {
+            persist.blacklist.add(...deletedByMe);
+        }
+    }
 
     // Gett source playlist tracks
     const tracksSource = await getTracks(sourceId);
@@ -450,9 +481,10 @@ async function playlistArchiveContents(sourceId, targetId) {
     // Get new tracks, filter deleted/blacklisted tracks
     const newTracks = diff(tracksSource, tracksTarget);
     const newTracksWithoutDeleted = diff(newTracks, persist.playlists[targetId].blacklist);
+    const newTracksWithoutGlobalBlacklist = (settings.global.blacklist.enabled) ? diff(newTracksWithoutDeleted, persist.blacklist) : newTracksWithoutDeleted;
 
     // Add new tracks to my playlist
-    await addTracks(targetId, newTracksWithoutDeleted);
+    await addTracks(targetId, newTracksWithoutGlobalBlacklist);
 
     // Save my playlist for next run
     persist.playlists[targetId].tracks = await getTracks(targetId);
