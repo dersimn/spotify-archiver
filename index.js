@@ -275,7 +275,7 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
     // Fetch global blacklist playlist
     if (settings.global.blacklist.enabled && settings.global.blacklist.id) {
         const blacklistedTracks = await getTracks(settings.global.blacklist.id);
-        if (blacklistedTracks.length > 0) persist.blacklist.add(...blacklistedTracks);
+        blacklistedTracks.forEach(i => persist.blacklist.add(i));
     }
 
     for (const element of settings.archiver) {
@@ -467,13 +467,8 @@ async function playlistArchiveContents(sourceId, targetId) {
 
     // Get diff between locally saved state and "Playlist (save)", save to deleted playlist and get it
     const deletedByMe = diff(persist.playlists[targetId].tracks, tracksTarget);
-
-    if (deletedByMe.length > 0) {
-        persist.playlists[targetId].blacklist.add(...deletedByMe);
-        if (settings.global.blacklist.enabled) {
-            persist.blacklist.add(...deletedByMe);
-        }
-    }
+    deletedByMe.forEach(i => persist.playlists[targetId].blacklist.add(i));
+    if (settings.global.blacklist.enabled) deletedByMe.forEach(i => persist.blacklist.add(i));
 
     // Gett source playlist tracks
     const tracksSource = await getTracks(sourceId);
