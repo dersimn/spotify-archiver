@@ -22,8 +22,6 @@ jobs:
           images: dersimn/spotify-archiver
           tag-sha: false
           tag-semver: |
-            {{major}}
-            {{major}}.{{minor}}
             {{major}}.{{minor}}.{{patch}}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
