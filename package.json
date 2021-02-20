@@ -1,6 +1,6 @@
 {
   "name": "spotify-archiver",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Archives tracks from subscribed playlists in case they are removed or replaced by the curator.",
   "main": "index.js",
   "scripts": {
@@ -35,7 +35,10 @@
       "no-await-in-loop": "off",
       "unicorn/no-reduce": "warn",
       "capitalized-comments": "warn",
-      "curly": ["error", "multi-line"],
+      "curly": [
+        "error",
+        "multi-line"
+      ],
       "unicorn/prevent-abbreviations": [
         "error",
         {
