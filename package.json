@@ -32,7 +32,7 @@
   "xo": {
     "space": 4,
     "rules": {
-      "no-await-in-loop": "warn",
+      "no-await-in-loop": "off",
       "unicorn/no-reduce": "warn",
       "capitalized-comments": "warn",
       "curly": ["error", "multi-line"],
