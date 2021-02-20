@@ -111,7 +111,8 @@ const settings = (() => {
                 },
                 target: {
                     name: element + ' (save)',
-                    findByPersistence: true
+                    findByPersistence: true,
+                    replaceCoverOnRefresh: false
                 }
             });
         }
@@ -126,7 +127,8 @@ const settings = (() => {
                 target: {
                     name: nameByStringOrObject(element.target),
                     id: element.target.id,
-                    findByPersistence: element.source.findByPersistence ?? true
+                    findByPersistence: element.source.findByPersistence ?? true,
+                    replaceCoverOnRefresh: element.source.replaceCoverOnRefresh ?? false
                 }
             });
         }
@@ -264,15 +266,11 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
                 element.target.id ||
                 (element.target.findByPersistence && findPlaylistIdByNameInPersist(element.target.name)) ||
                 (await swat.findUserPlaylistByName(element.target.name, userPlaylists))?.id ||
-                (await spotify.createPlaylist(element.target.name, {public: false})).body.id;
+                await createNewPlaylistFromSource(sourceId, element.target.name);
 
             // Copy over Cover Image
-            try {
-                const sourcePlaylist = (await spotify.getPlaylist(sourceId)).body;
-                const imageBase64 = await getImageFromUrlAsBase64(sourcePlaylist.images[0].url);
-                await spotify.uploadCustomPlaylistCoverImage(targetId, imageBase64);
-            } catch (error) {
-                log.warn('Error copying Cover Image ' + error);
+            if (element.target.replaceCoverOnRefresh) {
+                await copyCoverImage(sourceId, targetId);
             }
 
             const sourceName = element.source.name ||
@@ -310,6 +308,28 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
 log.debug('scheduler', mainScheduler);
 
 // Functions
+async function createNewPlaylistFromSource(sourceId, targetName) {
+    const targetId = (await spotify.createPlaylist(targetName, {public: false})).body.id;
+    await copyCoverImage(sourceId, targetId);
+    return targetId;
+}
+
+async function copyCoverImage(sourceId, targetId) {
+    try {
+        const sourcePlaylist = (await spotify.getPlaylist(sourceId)).body;
+        const imageUrl = sourcePlaylist.images[0].url;
+        log.debug('copyCoverImage', sourceId, targetId, 'downloading', imageUrl);
+        const imageBase64 = await getImageFromUrlAsBase64(sourcePlaylist.images[0].url);
+        log.debug('copyCoverImage', sourceId, targetId, 'got image');
+        await spotify.uploadCustomPlaylistCoverImage(targetId, imageBase64);
+        log.debug('copyCoverImage', sourceId, targetId, 'uploaded image');
+        return true;
+    } catch (error) {
+        log.warn('Error copying Cover Image ' + error);
+        return false;
+    }
+}
+
 async function checkAuth() {
     try {
         await spotify.getMe();
