@@ -1,4 +1,4 @@
-FROM node as jsbuilder
+FROM node:15 as jsbuilder
 
 COPY . /app
 WORKDIR /app
@@ -7,7 +7,7 @@ RUN npm install
 
 # ---------------------------------------------------------
 
-FROM node:slim
+FROM node:15-slim
 
 COPY --from=jsbuilder /app /app
 
