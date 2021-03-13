@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import fs from 'fs';
-import util from 'util';
+import {inspect} from 'util';
 import https from 'https';
 import log from 'yalm';
 import Yargs from 'yargs';
@@ -75,7 +75,7 @@ try {
     // ...
 }
 
-log.debug('loaded persistence file', util.inspect(unwatchedPersistence, {depth: 1, colors: true}));
+log.debug('loaded persistence file', inspect(unwatchedPersistence, {depth: 1, colors: true}));
 
 const persist = onChange(unwatchedPersistence, () => {
     const json = JSON.stringify(unwatchedPersistence, (key, value) => {
@@ -159,7 +159,7 @@ const settings = (() => {
 
     return tmp;
 })();
-log.debug('loaded settings', util.inspect(settings, {depth: null, colors: true}));
+log.debug('loaded settings', inspect(settings, {depth: null, colors: true}));
 
 // Prepare Spotify Api
 const scopes = ['playlist-read-private', 'playlist-read-collaborative', 'playlist-modify-public', 'playlist-modify-private'];
@@ -457,7 +457,9 @@ async function playlistArchiveContents(sourceId, targetId) {
 
     // Get diff between locally saved state and "Playlist (save)", save to deleted playlist and get it
     const deletedByMe = diff(persist.playlists[targetId].tracks, tracksTarget);
-    deletedByMe.forEach(i => persist.playlists[targetId].blacklist.add(i));
+    for (const i of deletedByMe) {
+        persist.playlists[targetId].blacklist.add(i);
+    }
 
     // Gett source playlist tracks
     const tracksSource = await getTracks(sourceId);

@@ -47,7 +47,8 @@
           "whitelist": {
             "pkg": true,
             "tmp": true,
-            "obj": true
+            "obj": true,
+            "i": true
           }
         }
       ]
