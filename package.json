@@ -3,6 +3,7 @@
   "version": "0.0.5",
   "description": "Archives tracks from subscribed playlists in case they are removed or replaced by the curator.",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -21,7 +22,8 @@
     "js-yaml": "^3.14.0",
     "node-schedule": "^1.3.2",
     "on-change": "^2.1.2",
-    "spotify-web-api-node": "git+https://github.com/dersimn/spotify-web-api-node.git#fork/pr-2",
+    "spotify-web-api-node": "github:dersimn/spotify-web-api-node",
+    "spotify-web-api-tools": "github:dersimn/spotify-web-api-tools",
     "yalm": "^4.1.0",
     "yargs": "^15.4.1",
     "yetanothertimerlibrary": "^3.2.0"

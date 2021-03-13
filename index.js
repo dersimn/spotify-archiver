@@ -1,12 +1,22 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const util = require('util');
-const https = require('https');
-const pkg = require('./package.json');
-const log = require('yalm');
+import fs from 'fs';
+import util from 'util';
+import https from 'https';
+import log from 'yalm';
+import Yargs from 'yargs';
+import SpotifyWebApi from 'spotify-web-api-node';
+import SpotifyWebApiTools from 'spotify-web-api-tools';
+import express from 'express';
+import schedule from 'node-schedule';
+import onChange from 'on-change';
+import Yatl from 'yetanothertimerlibrary';
+import yaml from 'js-yaml';
+
+const pkg = JSON.parse(await fs.promises.readFile(new URL('./package.json', import.meta.url)));
+
 const environmentVariablesPrefix = pkg.name.replace(/[^a-zA-Z\d]/, '_').toUpperCase();
-const config = require('yargs')
+const config = Yargs
     .env(environmentVariablesPrefix)
     .usage(pkg.name + ' ' + pkg.version + '\n' + pkg.description + '\n\nUsage: $0 [options]')
     .describe('verbosity', 'Possible values: "error", "warn", "info", "debug"')
@@ -39,13 +49,6 @@ const config = require('yargs')
     .version()
     .help('help')
     .argv;
-const SpotifyWebApi = require('spotify-web-api-node');
-const SpotifyWebApiTools = require('./spotify-web-api-tools.js');
-const express = require('express');
-const schedule = require('node-schedule');
-const onChange = require('on-change');
-const Yatl = require('yetanothertimerlibrary');
-const yaml = require('js-yaml');
 
 // Parse arguments
 log.setLevel(config.verbosity);
