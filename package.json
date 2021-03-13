@@ -1,6 +1,6 @@
 {
   "name": "spotify-archiver",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Archives tracks from subscribed playlists in case they are removed or replaced by the curator.",
   "main": "index.js",
   "type": "module",
