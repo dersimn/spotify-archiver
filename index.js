@@ -4,7 +4,8 @@ import fs from 'fs';
 import {inspect} from 'util';
 import https from 'https';
 import log from 'yalm';
-import Yargs from 'yargs';
+import yargs from 'yargs';
+import {hideBin} from 'yargs/helpers';
 import SpotifyWebApi from 'spotify-web-api-node';
 import SpotifyWebApiTools from 'spotify-web-api-tools';
 import express from 'express';
@@ -15,7 +16,7 @@ import yaml from 'js-yaml';
 import pkg from './package.json';
 
 const environmentVariablesPrefix = pkg.name.replace(/[^a-zA-Z\d]/, '_').toUpperCase();
-const config = Yargs
+const config = yargs(hideBin(process.argv))
     .env(environmentVariablesPrefix)
     .usage(pkg.name + ' ' + pkg.version + '\n' + pkg.description + '\n\nUsage: $0 [options]')
     .describe('verbosity', 'Possible values: "error", "warn", "info", "debug"')
@@ -100,7 +101,7 @@ let globalBlacklist = new Set();
 const settings = (() => {
     let yamlfile;
     try {
-        yamlfile = yaml.safeLoad(fs.readFileSync(config.settingsFile, 'utf8'));
+        yamlfile = yaml.load(fs.readFileSync(config.settingsFile, 'utf8'));
     } catch (error) {
         log.error('Unable to load Settings File', error);
         process.exit(1);
