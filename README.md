@@ -57,7 +57,7 @@ npm install
 Create/Edit `settings.yaml`
 
 ```
-node index -i <CLIENT_ID> -s <CLIENT_SECRET>
+node --experimental-json-modules index -i <CLIENT_ID> -s <CLIENT_SECRET>
 ```
 
 ## To Do
@@ -69,7 +69,7 @@ node index -i <CLIENT_ID> -s <CLIENT_SECRET>
 
 Development:
 
-    node --unhandled-rejections=strict --trace-deprecation index -i <CLIENT_ID> -s <CLIENT_SECRET> -v debug
+    node --experimental-json-modules --unhandled-rejections=strict --trace-deprecation index -i <CLIENT_ID> -s <CLIENT_SECRET> -v debug
 
 Docker development build:
 

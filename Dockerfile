@@ -14,4 +14,4 @@ COPY --from=jsbuilder /app /app
 WORKDIR /app
 
 EXPOSE 3000
-ENTRYPOINT [ "node", "index.js" ]
+ENTRYPOINT [ "node", "--experimental-json-modules", "index.js" ]

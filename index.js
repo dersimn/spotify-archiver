@@ -12,8 +12,7 @@ import schedule from 'node-schedule';
 import onChange from 'on-change';
 import Yatl from 'yetanothertimerlibrary';
 import yaml from 'js-yaml';
-
-const pkg = JSON.parse(await fs.promises.readFile(new URL('./package.json', import.meta.url)));
+import pkg from './package.json';
 
 const environmentVariablesPrefix = pkg.name.replace(/[^a-zA-Z\d]/, '_').toUpperCase();
 const config = Yargs
