@@ -88,7 +88,7 @@ const persist = onChange(unwatchedPersistence, () => {
         return value;
     }, ...((config.verbosity === 'debug') ? [2] : []));
 
-    fs.writeFile(config.persistenceFile, json, error => {
+    fs.writeFileSync(config.persistenceFile, json, error => {
         if (error) {
             log.error('Error saving Persistence', error.message);
         }
