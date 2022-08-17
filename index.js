@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import pkg from './package.json' assert {type: "json"};
 import fs from 'fs';
 import {inspect} from 'util';
 import https from 'https';
@@ -13,7 +14,6 @@ import schedule from 'node-schedule';
 import onChange from 'on-change';
 import Yatl from 'yetanothertimerlibrary';
 import yaml from 'js-yaml';
-import pkg from './package.json';
 
 const environmentVariablesPrefix = pkg.name.replace(/[^a-zA-Z\d]/, '_').toUpperCase();
 const config = yargs(hideBin(process.argv))
