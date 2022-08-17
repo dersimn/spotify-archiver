@@ -195,20 +195,6 @@ async function doRefreshToken() {
 
 const refreshTimer = new Yatl.Timer(doRefreshToken);
 
-// Check Auth Status on Start
-(async () => {
-    if (persist.tokens.refreshToken) {
-        await doRefreshToken();
-        if (await checkAuth()) {
-            mainScheduler.invoke();
-        } else {
-            log.error('Cloud not refresh token');
-        }
-    } else {
-        log.info('Please authenticate via web browser.');
-    }
-})();
-
 // Provide HTTP Callback Server for Auth
 const app = express();
 
@@ -337,6 +323,18 @@ const mainScheduler = schedule.scheduleJob(config.schedule, async () => {
     log.info('Job finished');
 });
 log.debug('scheduler created');
+
+// Check Auth Status on Start
+if (persist.tokens.refreshToken) {
+    await doRefreshToken();
+    if (await checkAuth()) {
+        mainScheduler.invoke();
+    } else {
+        log.error('Cloud not refresh token');
+    }
+} else {
+    log.info('Please authenticate via web browser.');
+}
 
 // Functions
 async function createNewPlaylistFromSource(sourceId, targetName) {
