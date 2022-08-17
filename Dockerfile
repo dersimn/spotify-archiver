@@ -1,4 +1,4 @@
-FROM node:15 as jsbuilder
+FROM node:18 as jsbuilder
 
 COPY . /app
 WORKDIR /app
@@ -7,11 +7,11 @@ RUN npm install
 
 # ---------------------------------------------------------
 
-FROM node:15-slim
+FROM node:18-slim
 
 COPY --from=jsbuilder /app /app
 
 WORKDIR /app
 
 EXPOSE 3000
-ENTRYPOINT [ "node", "--experimental-json-modules", "index.js" ]
+ENTRYPOINT [ "node", "index.js" ]
