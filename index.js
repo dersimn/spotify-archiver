@@ -131,7 +131,7 @@ const settings = (() => {
             tmp.archiver.push({
                 source: {
                     name: element,
-                    findByPersistence: false
+                    findByPersistence: true
                 },
                 target: {
                     name: element + ' (save)',
