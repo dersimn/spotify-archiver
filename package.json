@@ -18,18 +18,18 @@
   },
   "homepage": "https://github.com/dersimn/spotify-archiver#readme",
   "dependencies": {
-    "express": "^4.17.1",
-    "js-yaml": "^4.0.0",
-    "node-schedule": "^2.0.0",
-    "on-change": "^2.2.3",
+    "express": "^4.18.1",
+    "js-yaml": "^4.1.0",
+    "node-schedule": "^2.1.0",
+    "on-change": "^4.0.1",
     "spotify-web-api-node": "github:dersimn/spotify-web-api-node",
     "spotify-web-api-tools": "github:dersimn/spotify-web-api-tools",
     "yalm": "^4.1.0",
-    "yargs": "^16.2.0",
+    "yargs": "^17.5.1",
     "yetanothertimerlibrary": "^3.2.0"
   },
   "devDependencies": {
-    "xo": "^0.38.2"
+    "xo": "^0.51.0"
   },
   "xo": {
     "space": 4,
